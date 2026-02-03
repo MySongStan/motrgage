@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { MortgageInputs, EarlyRepaymentInputs, Comparison, RateChange, RepaymentMethod } from './types';
 import { simulateMortgage } from './services/mortgageUtils';
 import { ComparisonCharts } from './components/ComparisonCharts';
@@ -368,6 +369,7 @@ const App: React.FC = () => {
         </div>
       </main>
       <footer className="text-center py-10 text-slate-400 text-xs">© 2024 Mortgage Optimizer Pro - 专业房贷决策支持系统</footer>
+      <SpeedInsights />
     </div>
   );
 };
