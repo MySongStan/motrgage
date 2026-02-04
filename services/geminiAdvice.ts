@@ -3,7 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 import { Comparison } from "../types";
 
 export async function getMortgageAdvice(comparison: Comparison): Promise<string> {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY });
   
   const prompt = `
     作为一名资深理财专家，请基于以下房贷提前还款对比数据提供专业建议：

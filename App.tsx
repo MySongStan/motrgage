@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { MortgageInputs, EarlyRepaymentInputs, Comparison, RateChange, RepaymentMethod } from './types';
+import { MortgageInputs, EarlyRepaymentInputs, Comparison, RateChange, RepaymentMethod, PaymentMonth } from './types';
 import { simulateMortgage } from './services/mortgageUtils';
 import { ComparisonCharts } from './components/ComparisonCharts';
 import { getMortgageAdvice } from './services/geminiAdvice';
@@ -121,13 +121,13 @@ const App: React.FC = () => {
               房贷提前还款决策器
             </h1>
           </div>
-          <div className="hidden md:flex items-center gap-4">
+          <div className="flex items-center gap-4">
              <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-full border border-green-100">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                 </span>
-                <span className="text-[10px] font-bold text-green-700 uppercase tracking-widest">智能最优解已就绪</span>
+                <span className="text-[10px] font-bold text-green-700 uppercase tracking-widest hidden sm:inline">智能最优解已就绪</span>
              </div>
           </div>
         </div>
@@ -319,39 +319,66 @@ const App: React.FC = () => {
 
             {/* Repayment Table */}
             <div id="repayment-table" className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-              <div className="p-6 border-b border-slate-50 flex items-center justify-between">
-                <h3 className="font-semibold text-slate-800">还款明细 (共 {comparison.optimized.totalMonths} 期)</h3>
+              <div className="p-4 border-b border-slate-50 flex items-center justify-between">
+                <h3 className="font-semibold text-slate-800 text-sm sm:text-base">还款明细 (共 {comparison.optimized.totalMonths} 期)</h3>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
+                <table className="w-full text-xs sm:text-sm text-left">
                   <thead>
                     <tr className="bg-slate-50 text-slate-500">
-                      <th className="px-6 py-3 whitespace-nowrap">期数</th>
-                      <th className="px-6 py-3 whitespace-nowrap">月供 (元)</th>
-                      <th className="px-6 py-3 whitespace-nowrap">本金/利息</th>
-                      <th className="px-6 py-3 whitespace-nowrap">额外还款</th>
-                      <th className="px-6 py-3 whitespace-nowrap">余额</th>
+                      <th className="px-3 sm:px-6 py-2 sm:py-3 whitespace-nowrap">期数</th>
+                      <th className="px-3 sm:px-6 py-2 sm:py-3 whitespace-nowrap">月供</th>
+                      <th className="px-3 sm:px-6 py-2 sm:py-3 whitespace-nowrap">本金/利息</th>
+                      <th className="px-3 sm:px-6 py-2 sm:py-3 whitespace-nowrap">额外</th>
+                      <th className="px-3 sm:px-6 py-2 sm:py-3 whitespace-nowrap">余额</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {comparison.optimized.schedule.slice(0, visibleRows).map((row) => (
-                      <tr key={row.month} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-4 font-medium text-slate-400">#{row.month}</td>
-                        <td className="px-6 py-4 font-semibold text-slate-800">¥{Math.round(row.payment).toLocaleString()}</td>
-                        <td className="px-6 py-4 text-xs whitespace-nowrap">
-                           <div className="flex items-center gap-2">
-                              <span className="text-blue-600">本:¥{Math.round(row.principalPaid)}</span>
-                              <span className="text-red-400">利:¥{Math.round(row.interestPaid)}</span>
-                           </div>
+                    {visibleRows <= 24 ? (
+                      comparison.optimized.schedule.slice(0, visibleRows).map((row) => (
+                        <tr key={row.month} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-3 sm:px-6 py-2 sm:py-4 font-medium text-slate-400">#{row.month}</td>
+                          <td className="px-3 sm:px-6 py-2 sm:py-4 font-semibold text-slate-800">¥{Math.round(row.payment).toLocaleString()}</td>
+                          <td className="px-3 sm:px-6 py-2 sm:py-4 text-[10px] sm:text-xs whitespace-nowrap">
+                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
+                                <span className="text-blue-600">本:¥{Math.round(row.principalPaid)}</span>
+                                <span className="text-red-400">利:¥{Math.round(row.interestPaid)}</span>
+                             </div>
+                          </td>
+                          <td className="px-3 sm:px-6 py-2 sm:py-4">
+                            {row.extraPaid > 0 ? (
+                              <span className="bg-green-100 text-green-700 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-[10px] font-bold">+¥{row.extraPaid.toLocaleString()}</span>
+                            ) : <span className="text-slate-300">-</span>}
+                          </td>
+                          <td className="px-3 sm:px-6 py-2 sm:py-4 text-slate-500 font-mono text-[10px] sm:text-xs">¥{Math.round(row.remainingBalance).toLocaleString()}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="p-0">
+                          <div className="max-h-96 overflow-y-auto">
+                            {comparison.optimized.schedule.map((row) => (
+                              <div key={row.month} className="grid grid-cols-5 hover:bg-slate-50/50 transition-colors py-2 px-4 border-b border-slate-50">
+                                <div className="font-medium text-slate-400 flex items-center">#{row.month}</div>
+                                <div className="font-semibold text-slate-800 flex items-center">¥{Math.round(row.payment).toLocaleString()}</div>
+                                <div className="text-xs flex items-center">
+                                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
+                                    <span className="text-blue-600">本:¥{Math.round(row.principalPaid)}</span>
+                                    <span className="text-red-400">利:¥{Math.round(row.interestPaid)}</span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center">
+                                  {row.extraPaid > 0 ? (
+                                    <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold">+¥{row.extraPaid.toLocaleString()}</span>
+                                  ) : <span className="text-slate-300">-</span>}
+                                </div>
+                                <div className="text-slate-500 font-mono text-xs flex items-center">¥{Math.round(row.remainingBalance).toLocaleString()}</div>
+                              </div>
+                            ))}
+                          </div>
                         </td>
-                        <td className="px-6 py-4">
-                          {row.extraPaid > 0 ? (
-                            <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold">+¥{row.extraPaid.toLocaleString()}</span>
-                          ) : <span className="text-slate-300">-</span>}
-                        </td>
-                        <td className="px-6 py-4 text-slate-500 font-mono text-xs">¥{Math.round(row.remainingBalance).toLocaleString()}</td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
