@@ -36,6 +36,16 @@ export function simulateMortgage(
 
   const start = new Date(mortgage.startDate);
   const sortedRateChanges = [...mortgage.rateChanges].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const extraRepaymentsByMonth = new Map<number, number>();
+  if (early?.extraRepayments && early.extraRepayments.length > 0) {
+    for (const item of early.extraRepayments) {
+      if (!item || !Number.isFinite(item.month) || !Number.isFinite(item.amount)) continue;
+      const m = Math.max(1, Math.floor(item.month));
+      const amount = Math.max(0, item.amount);
+      if (amount <= 0) continue;
+      extraRepaymentsByMonth.set(m, (extraRepaymentsByMonth.get(m) ?? 0) + amount);
+    }
+  }
 
   while (remainingBalance > 0.005 && month <= 600) {
     const currentDate = new Date(start);
@@ -86,6 +96,10 @@ export function simulateMortgage(
       }
       if (month === early.oneTimeMonth) {
         extraPayment += early.oneTimeAmount;
+      }
+      const extraForThisMonth = extraRepaymentsByMonth.get(month);
+      if (extraForThisMonth && extraForThisMonth > 0) {
+        extraPayment += extraForThisMonth;
       }
     }
 

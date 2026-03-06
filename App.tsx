@@ -21,6 +21,7 @@ const App: React.FC = () => {
     oneTimeMonth: 12,
     monthlyExtra: 2000,
     strategy: 'REDUCE_TERM',
+    extraRepayments: [],
   });
 
   const [aiAdvice, setAiAdvice] = useState<string>('');
@@ -106,6 +107,39 @@ const App: React.FC = () => {
     if (tableElement) {
       tableElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+  };
+
+  // Multiple one-time repayments management
+  const addExtraRepayment = () => {
+    const existing = early.extraRepayments ?? [];
+    const defaultMonth = Math.max(1, (existing.length + 1) * 12);
+    const newItem = {
+      id: crypto.randomUUID(),
+      month: defaultMonth,
+      amount: 50000,
+    };
+    setEarly({
+      ...early,
+      extraRepayments: [...existing, newItem],
+    });
+  };
+
+  const updateExtraRepayment = (id: string, field: 'month' | 'amount', value: number) => {
+    const existing = early.extraRepayments ?? [];
+    setEarly({
+      ...early,
+      extraRepayments: existing.map(item =>
+        item.id === id ? { ...item, [field]: value } : item
+      ),
+    });
+  };
+
+  const removeExtraRepayment = (id: string) => {
+    const existing = early.extraRepayments ?? [];
+    setEarly({
+      ...early,
+      extraRepayments: existing.filter(item => item.id !== id),
+    });
   };
 
   return (
@@ -226,15 +260,102 @@ const App: React.FC = () => {
                 <i className="fas fa-bolt text-amber-500"></i>
                 提前还款方案
               </h2>
-              <div className="space-y-4">
+              <div className="space-y-5">
+                {/* 主一次性还款设置 */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">一次性还款 (元)</label>
-                    <input type="number" value={early.oneTimeAmount} onChange={e => setEarly({...early, oneTimeAmount: Number(e.target.value)})} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                    <input
+                      type="number"
+                      value={early.oneTimeAmount}
+                      onChange={e => setEarly({ ...early, oneTimeAmount: Number(e.target.value) || 0 })}
+                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">还款期数</label>
-                    <input type="number" min="1" max={mortgage.totalMonths} value={early.oneTimeMonth} onChange={e => setEarly({...early, oneTimeMonth: Math.max(1, Number(e.target.value))})} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                    <input
+                      type="number"
+                      min="1"
+                      max={mortgage.totalMonths}
+                      value={early.oneTimeMonth}
+                      onChange={e => setEarly({ ...early, oneTimeMonth: Math.max(1, Number(e.target.value) || 1) })}
+                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* 多次一次性还款列表 */}
+                <div className="pt-3 border-t border-slate-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                      <i className="fas fa-calendar-plus text-amber-500"></i>
+                      多次一次性还款
+                    </span>
+                    <button
+                      type="button"
+                      onClick={addExtraRepayment}
+                      className="text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1 rounded transition-colors"
+                    >
+                      + 添加一次
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mb-2">
+                    例如在第 24 期、36 期各追加一笔大额还款，用于模拟多次收入峰值（年终奖、奖金等）。
+                  </p>
+                  <div className="space-y-2">
+                    {(early.extraRepayments ?? []).length === 0 && (
+                      <div className="text-[11px] text-slate-400 italic">
+                        暂无额外提前还款记录，可点击右侧“添加一次”模拟多次提前还款。
+                      </div>
+                    )}
+                    {(early.extraRepayments ?? []).map(item => (
+                      <div
+                        key={item.id}
+                        className="flex items-end gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100"
+                      >
+                        <div className="w-20">
+                          <label className="block text-[10px] font-bold text-slate-400 mb-1">期数</label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={mortgage.totalMonths}
+                            value={item.month}
+                            onChange={e =>
+                              updateExtraRepayment(
+                                item.id,
+                                'month',
+                                Math.max(1, Math.min(mortgage.totalMonths, Number(e.target.value) || 1))
+                              )
+                            }
+                            className="w-full text-xs px-2 py-1.5 bg-white border border-slate-200 rounded outline-none"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-[10px] font-bold text-slate-400 mb-1">金额 (元)</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={item.amount}
+                            onChange={e =>
+                              updateExtraRepayment(
+                                item.id,
+                                'amount',
+                                Math.max(0, Number(e.target.value) || 0)
+                              )
+                            }
+                            className="w-full text-xs px-2 py-1.5 bg-white border border-slate-200 rounded outline-none"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeExtraRepayment(item.id)}
+                          className="p-2 text-slate-300 hover:text-red-500"
+                        >
+                          <i className="fas fa-trash-can text-xs" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
                 <div>
@@ -356,26 +477,35 @@ const App: React.FC = () => {
                     ) : (
                       <tr>
                         <td colSpan={5} className="p-0">
-                          <div className="max-h-96 overflow-y-auto">
-                            {comparison.optimized.schedule.map((row) => (
-                              <div key={row.month} className="grid grid-cols-5 hover:bg-slate-50/50 transition-colors py-2 px-4 border-b border-slate-50">
-                                <div className="font-medium text-slate-400 flex items-center">#{row.month}</div>
-                                <div className="font-semibold text-slate-800 flex items-center">¥{Math.round(row.payment).toLocaleString()}</div>
-                                <div className="text-xs flex items-center">
-                                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
-                                    <span className="text-blue-600">本:¥{Math.round(row.principalPaid)}</span>
-                                    <span className="text-red-400">利:¥{Math.round(row.interestPaid)}</span>
-                                  </div>
-                                </div>
-                                <div className="flex items-center">
-                                  {row.extraPaid > 0 ? (
-                                    <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold">+¥{row.extraPaid.toLocaleString()}</span>
-                                  ) : <span className="text-slate-300">-</span>}
-                                </div>
-                                <div className="text-slate-500 font-mono text-xs flex items-center">¥{Math.round(row.remainingBalance).toLocaleString()}</div>
+                          {comparison.optimized.schedule.map((row) => (
+                            <div
+                              key={row.month}
+                              className="grid grid-cols-5 hover:bg-slate-50/50 transition-colors py-2 px-4 border-b border-slate-50"
+                            >
+                              <div className="font-medium text-slate-400 flex items-center">#{row.month}</div>
+                              <div className="font-semibold text-slate-800 flex items-center">
+                                ¥{Math.round(row.payment).toLocaleString()}
                               </div>
-                            ))}
-                          </div>
+                              <div className="text-xs flex items-center">
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
+                                  <span className="text-blue-600">本:¥{Math.round(row.principalPaid)}</span>
+                                  <span className="text-red-400">利:¥{Math.round(row.interestPaid)}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center">
+                                {row.extraPaid > 0 ? (
+                                  <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold">
+                                    +¥{row.extraPaid.toLocaleString()}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-300">-</span>
+                                )}
+                              </div>
+                              <div className="text-slate-500 font-mono text-xs flex items-center">
+                                ¥{Math.round(row.remainingBalance).toLocaleString()}
+                              </div>
+                            </div>
+                          ))}
                         </td>
                       </tr>
                     )}

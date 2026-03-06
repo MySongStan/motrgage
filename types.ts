@@ -21,6 +21,15 @@ export interface EarlyRepaymentInputs {
   oneTimeMonth: number;
   monthlyExtra: number;
   strategy: 'REDUCE_TERM' | 'REDUCE_MONTHLY';
+  /**
+   * 额外的一次性提前还款（多次）。
+   * 保持可选以兼容旧数据。
+   */
+  extraRepayments?: {
+    id: string;
+    month: number;
+    amount: number;
+  }[];
 }
 
 export interface PaymentMonth {
