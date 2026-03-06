@@ -8,11 +8,11 @@
 ### 🎯 核心功能
 - **房贷计算**：支持等额本息和等额本金两种还款方式
 - **利率调整**：允许用户添加多个利率调整节点
-- **提前还款**：支持一次性还款和每月追加还款
+- **提前还款**：支持一次性还款、每月追加还款、以及**多次一次性提前还款**
 - **策略对比**：对比缩短年限和减少月供两种策略
 - **数据可视化**：提供本金余额对比、总支出构成、月供成分动态博弈等图表
 - **AI 理财建议**：基于 Google Gemini API 提供专业理财建议
-- **详细还款明细**：提供每期还款的详细数据，支持虚拟滚动优化
+- **详细还款明细**：提供每期还款的详细数据，支持按需展开查看更多期数
 
 ### 📱 响应式设计
 - 适配桌面端、平板和移动设备
@@ -32,7 +32,6 @@
 - recharts 3.7.0（图表库）
 - @google/genai 1.39.0（AI 功能）
 - react-markdown 9.0.1（Markdown 渲染）
-- react-window 2.2.6（虚拟滚动）
 
 ## 安装与运行
 
@@ -55,14 +54,13 @@ npm install
 创建 `.env` 文件，添加 Google Gemini API Key：
 
 ```env
-# Google Gemini API Key
-API_KEY=YOUR_GOOGLE_GEMINI_API_KEY_HERE
-
-# Vite 配置
-VITE_API_KEY=${API_KEY}
+# Vite 环境变量（用于 AI 理财建议）
+VITE_API_KEY=YOUR_GOOGLE_GEMINI_API_KEY_HERE
 ```
 
 > 注意：如果没有 Google Gemini API Key，可以跳过此步骤，但 AI 理财建议功能将无法使用。
+>
+> 安全提示：请勿将包含 Key 的 `.env` 文件提交到仓库（建议加入 `.gitignore`）。
 
 ### 4. 运行项目
 ```bash
@@ -88,8 +86,9 @@ npm run build
 
 ### 2. 提前还款设置
 1. 输入一次性还款金额和还款期数
-2. 输入每月追加还款金额
-3. 选择提前还款策略：缩短年限或减少月供
+2. （可选）在“多次一次性还款”中添加多笔提前还款（每笔可单独设置期数与金额）
+3. 输入每月追加还款金额
+4. 选择提前还款策略：缩短年限或减少月供
 
 ### 3. 查看结果
 1. 查看最优还款策略分析
@@ -106,6 +105,8 @@ npm run build
 ├── services/
 │   ├── mortgageUtils.ts       # 房贷计算核心逻辑
 │   └── geminiAdvice.ts        # AI 建议功能
+├── src/
+│   └── index.css              # 全局样式（Tailwind 指令与基础样式）
 ├── App.tsx                    # 主应用组件
 ├── types.ts                   # 类型定义
 ├── index.html                 # HTML 入口
